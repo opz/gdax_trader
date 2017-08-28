@@ -12,6 +12,14 @@ logger = logging.getLogger(__name__)
 
 
 class GDAXTrader:
+    """
+    Run trading strategy and interact with GDAX API
+
+    Attributes:
+        products: The products being tracked by the trader
+        strategies: The strategies being run by the trader
+        client: The GDAX API client
+    """
 
     # Environment variables required for authenticating with GDAX
     GDAX_KEY_ENV = 'GDAX_KEY'
