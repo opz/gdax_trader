@@ -30,7 +30,10 @@ class GDAXTraderTestCase(unittest.TestCase):
         strategy = MagicMock()
         trader.add_strategy(strategy)
 
+        trader._get_accounts = MagicMock()
         trader._get_product_ticker = MagicMock()
+        trader._get_orders = MagicMock()
+        trader._get_positions = MagicMock()
 
         result = trader._run_iteration()
 
@@ -52,8 +55,10 @@ class GDAXTraderTestCase(unittest.TestCase):
         strategy = MagicMock()
         trader.add_strategy(strategy)
 
-        trader._get_accounts = MagicMock(side_effect=ConnectionError) 
+        trader._get_accounts = MagicMock(side_effect=ConnectionError)
         trader._get_product_ticker = MagicMock()
+        trader._get_orders = MagicMock()
+        trader._get_positions = MagicMock()
 
         result = trader._run_iteration()
 
@@ -75,8 +80,10 @@ class GDAXTraderTestCase(unittest.TestCase):
         strategy = MagicMock()
         trader.add_strategy(strategy)
 
-        trader._get_accounts = MagicMock() 
+        trader._get_accounts = MagicMock()
         trader._get_product_ticker = MagicMock(side_effect=ConnectionError)
+        trader._get_orders = MagicMock()
+        trader._get_positions = MagicMock()
 
         result = trader._run_iteration()
 
