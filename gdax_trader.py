@@ -42,6 +42,7 @@ class GDAXTrader:
         self.products.append(product)
 
     def add_strategy(self, strategy):
+        strategy.add_trader(self)
         self.strategies.append(strategy)
 
     def run(self):
