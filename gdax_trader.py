@@ -65,11 +65,13 @@ class GDAXTrader:
         Perform an iteration of the GDAX trading algorithm
         """
 
-        # Retrieve all trading account data
+        # Retrieve all trading data
         try:
             accounts = self._get_accounts()
+            orders = self._get_orders()
+            position = self._get_position()
 
-        # Skip iteration if account data is unavailable
+        # Skip iteration if trading data is unavailable
         except ConnectionError:
             return False
 
