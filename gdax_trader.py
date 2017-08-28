@@ -88,7 +88,8 @@ class GDAXTrader:
 
         # Update all strategies
         for strategy in self.strategies:
-            strategy.next(tick_data, accounts)
+            strategy.next_data(accounts, tick_data, orders, position)
+            strategy.next()
 
         return True
 
