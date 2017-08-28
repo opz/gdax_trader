@@ -139,3 +139,84 @@ class GDAXTrader:
         """
 
         return self.client.get_accounts()
+
+    @connection_retry(MAX_RETRIES, RATE_LIMIT)
+    def _get_orders(self):
+        """
+        Get orders
+
+        :returns: list of orders
+        """
+
+        return self.client.get_orders()
+
+    @connection_retry(MAX_RETRIES, RATE_LIMIT)
+    def _get_position(self):
+        """
+        Get positions
+
+        :returns: get a profile overview
+        """
+
+        return self.client.get_position()
+
+    @connection_retry(MAX_RETRIES, RATE_LIMIT)
+    def get_order(self, order_id):
+        """
+        Get a single order
+
+        :param order_id: the order ID
+        :returns: the order
+        """
+
+        return self.client.get_order(order_id)
+
+    @connection_retry(MAX_RETRIES, RATE_LIMIT)
+    def get_fills(self, order_id):
+        """
+        Get fills for an order
+
+        :param order_id: the order ID
+        :returns: list of fills
+        """
+
+        return self.client.get_fills(order_id=order_id)
+
+    @connection_retry(MAX_RETRIES, RATE_LIMIT)
+    def buy(self, price, size, product):
+        """
+        Place buy order for a product
+
+        :param price: the maximum price that will be accepted
+        :size: the amount to buy
+        :product: the product to place the buy order for
+        :returns: order data
+        """
+
+        return self.client.buy(price=price, size=size, product_id=product,
+                time_in_force='FOK')
+
+    @connection_retry(MAX_RETRIES, RATE_LIMIT)
+    def sell(self, price, size, product):
+        """
+        Place sell order for a product
+
+        :param price: the minimum price that will be accepted
+        :size: the amount to sell
+        :product: the product to place the sell order for
+        :returns: order data
+        """
+
+        return self.client.sell(price=price, size=size, product_id=product,
+                time_in_force='FOK')
+
+    @connection_retry(MAX_RETRIES, RATE_LIMIT)
+    def cancel_order(self, order_id):
+        """
+        Cancel an order
+
+        :param order_id: the order ID
+        :returns: the API response
+        """
+
+        return self.client.cancel_order(order_id)
