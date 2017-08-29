@@ -65,10 +65,10 @@ class ArbitrageStrategy(Strategy):
 
         for account in self.accounts:
             try:
-                if account['balance'] > 0.0:
+                if float(account['balance']) > 0.0:
                     self.current_node = account['currency']
                     return
-            except (KeyError, TypeError) as error:
+            except (KeyError, TypeError, ValueError) as error:
                 logger.warning(error)
                 continue
 
