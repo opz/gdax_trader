@@ -272,7 +272,7 @@ class ArbitrageStrategy(Strategy):
         :returns: `True` if order is placed, `False` if no order is placed
         """
 
-        market_price = self._get_market_price()
+        market_price = self._get_market_price(signal, product)
 
         spread = distance / market_price
 
