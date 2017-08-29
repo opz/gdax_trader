@@ -423,6 +423,32 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
 
         self.assertEqual(market_price, TEST_PRICE)
 
+    def test__get_market_price_with_no_order_and_no_signal(self):
+        """
+        Test :meth:`ArbitrageStrategy._get_market_price`
+
+        Assert the returned market price is `None`.
+        """
+
+        arbitrage = ArbitrageStrategy()
+
+        arbitrage.order = None
+
+        TEST_PRODUCT = 'USD'
+        TEST_BID = 2.0
+        TEST_ASK = 3.0
+        arbitrage.ticker = {
+            TEST_PRODUCT: {
+                'bid': TEST_BID,
+                'ask': TEST_ASK,
+            },
+        }
+
+        INVALID_SIGNAL = 3
+        market_price = arbitrage._get_market_price(INVALID_SIGNAL, TEST_PRODUCT)
+
+        self.assertEqual(market_price, None)
+
     def test__get_market_price_with_buy_signal(self):
         """
         Test :meth:`ArbitrageStrategy._get_market_price`

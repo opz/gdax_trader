@@ -202,7 +202,10 @@ class ArbitrageStrategy(Strategy):
         :returns: the market price
         """
 
-        market_price = self.order['price']
+        try:
+            market_price = self.order['price']
+        except (KeyError, TypeError):
+            market_price = None
 
         try:
             if signal == CurrencyGraph.BUY_ORDER:
