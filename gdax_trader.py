@@ -54,6 +54,8 @@ class GDAXTrader:
 
         running = True
 
+        logger.info('Starting GDAX Trader...')
+
         while running:
             success = self._run_iteration()
 
@@ -88,6 +90,7 @@ class GDAXTrader:
 
         # Update all strategies
         for strategy in self.strategies:
+            logger.info('Next iteration...')
             strategy.next_data(accounts, tick_data, orders, position)
             strategy.next()
 
@@ -193,6 +196,7 @@ class GDAXTrader:
         :returns: order data
         """
 
+        logger.info('BUY: {} of {}, PRICE: {}'.format(size, product, price))
         return self.client.buy(price=price, size=size, product_id=product,
                 time_in_force='FOK')
 
@@ -207,6 +211,7 @@ class GDAXTrader:
         :returns: order data
         """
 
+        logger.info('SELL: {} of {}, PRICE: {}'.format(size, product, price))
         return self.client.sell(price=price, size=size, product_id=product,
                 time_in_force='FOK')
 
@@ -219,4 +224,5 @@ class GDAXTrader:
         :returns: the API response
         """
 
+        logger.info('CANCEL: {}'.format(order_id))
         return self.client.cancel_order(order_id)

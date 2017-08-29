@@ -38,13 +38,19 @@ class ArbitrageStrategy(Strategy):
 
         try:
             signal, product, distance = self._get_trade_signal()
-        except MissingCurrencyGraph:
+        except MissingCurrencyGraph as error:
+            logger.warning(error)
             return False
 
+        logger.info('Next trade signal: {} {} {}'.format(signal, product,
+                distance))
+
         if self._track_order():
+            logger.info('Update pending order...')
             self._update_pending_order(signal, product)
             return True
 
+        logger.info('Place new order...')
         self._place_order(signal, product, distance)
 
         return True
@@ -62,7 +68,8 @@ class ArbitrageStrategy(Strategy):
                 if account['balance'] > 0.0:
                     self.current_node = account['currency']
                     return
-            except (KeyError, TypeError):
+            except (KeyError, TypeError) as error:
+                logger.warning(error)
                 continue
 
     def _track_order(self):
@@ -130,7 +137,8 @@ class ArbitrageStrategy(Strategy):
                 ask = float(self.ticker[product]['ask'])
 
             # Do not build graph if ticker data is missing
-            except (KeyError, ValueError):
+            except (KeyError, ValueError) as error:
+                logger.warning(error)
                 return None
 
             currency_graph.add_currency_pair(base, quote, bid, ask)
@@ -178,6 +186,9 @@ class ArbitrageStrategy(Strategy):
 
         path, distance = self._get_currency_path(currency_graph)
 
+        logger.info('Best path for arbitrage: {}'.format(path))
+        logger.info('Path distance: {}'.format(distance))
+
         return currency_graph.get_next_signal(path) + (distance,)
 
     def _get_market_price(self, signal, product):
@@ -201,7 +212,8 @@ class ArbitrageStrategy(Strategy):
                 market_price = float(self.ticker[product]['ask'])
 
         # Use existing order price if ticker data is invalid
-        except (KeyError, ValueError):
+        except (KeyError, ValueError) as error:
+            logger.warning(error)
             pass
 
         return market_price
@@ -243,7 +255,10 @@ class ArbitrageStrategy(Strategy):
         market_price = self._get_market_price(signal, product)
 
         if not same_product or price != market_price:
+            logger.info('Cancel pending order')
             self._cancel_order()
+        else:
+            logger.info('Pending order unchanged')
 
         return True
 
@@ -262,16 +277,34 @@ class ArbitrageStrategy(Strategy):
         spread = distance / market_price
 
         if spread > ArbitrageStrategy.THRESHOLD:
+            logger.info('Trade signal above threshold: {}'.format(spread))
+
             if signal == CurrencyGraph.BUY_ORDER:
+                logger.info('Signal indicates BUY order')
+
                 currency = CurrencyGraph.get_quote(product)
+                logger.info('BUY with {}'.format(currency))
+
                 size = self.get_currency_balance(currency)
+                logger.info('Size of position: {}'.format(size))
+
                 self.trader.buy(market_price, size, product)
+
                 return True
 
             elif signal == CurrencyGraph.SELL_ORDER:
+                logger.info('Signal indicates SELL order')
+
                 currency = CurrencyGraph.get_base(product)
+                logger.info('SELL with {}'.format(currency))
+
                 size = self.get_currency_balance(currency)
+                logger.info('Size of position: {}'.format(size))
+
                 self.trader.sell(market_price, size, product)
+
                 return True
+
+        logger.info('Trade signal below threshold: {}'.format(spread))
 
         return False
