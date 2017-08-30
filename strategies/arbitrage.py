@@ -59,18 +59,27 @@ class ArbitrageStrategy(Strategy):
         """
         Set the current node by checking account balances
 
-        The first currency to have a positive balance is considered to be the
-        current node.
+        The account with the largest balance is selected as the current node.
+        If no valid accounts are found, the current node is unchanged.
         """
+
+        balance = 0.0
+        node = None
 
         for account in self.accounts:
             try:
-                if float(account['balance']) > 0.0:
-                    self.current_node = account['currency']
-                    return
+                next_balance = float(account['balance'])
+
+                if next_balance > balance:
+                    node = account['currency']
+                    balance = next_balance
+
             except (KeyError, TypeError, ValueError) as error:
                 logger.warning(error)
                 continue
+
+        if node != None:
+            self.current_node = node
 
     def _track_order(self):
         """
