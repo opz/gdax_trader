@@ -67,13 +67,10 @@ class GDAXTrader:
         Perform an iteration of the GDAX trading algorithm
         """
 
-        # Retrieve all trading data
+        # Retrieve account data
         try:
             accounts = self._get_accounts()
-            orders = self._get_orders()
-            position = self._get_position()
-
-        # Skip iteration if trading data is unavailable
+        # Skip iteration if account data is unavailable
         except ConnectionError:
             return False
 
@@ -91,7 +88,7 @@ class GDAXTrader:
         # Update all strategies
         for strategy in self.strategies:
             logger.info('Next iteration...')
-            strategy.next_data(accounts, tick_data, orders, position)
+            strategy.next_data(accounts, tick_data)
             strategy.next()
 
         return True
@@ -142,26 +139,6 @@ class GDAXTrader:
         """
 
         return self.client.get_accounts()
-
-    @connection_retry(MAX_RETRIES, RATE_LIMIT)
-    def _get_orders(self):
-        """
-        Get orders
-
-        :returns: list of orders
-        """
-
-        return self.client.get_orders()
-
-    @connection_retry(MAX_RETRIES, RATE_LIMIT)
-    def _get_position(self):
-        """
-        Get positions
-
-        :returns: get a profile overview
-        """
-
-        return self.client.get_position()
 
     @connection_retry(MAX_RETRIES, RATE_LIMIT)
     def get_order(self, order_id):

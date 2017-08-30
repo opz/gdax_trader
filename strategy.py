@@ -94,20 +94,16 @@ class Strategy:
 
         raise NotImplementedError
 
-    def next_data(self, accounts, ticker, orders, position):
+    def next_data(self, accounts, ticker):
         """
         Set data to be used for the current strategy iteration
 
         :param accounts: accounts data
         :param ticker: ticker data
-        :param orders: order data
-        :param position: position data
         """
 
         self.accounts = accounts
         self.ticker = ticker
-        self.orders = orders
-        self.position = position
 
     def get_currency_balance(self, currency):
         """
