@@ -75,8 +75,14 @@ class ArbitrageStrategy(Strategy):
         """
 
         try:
-            order = self.trader.get_order(self.order['id'])
+            order_id = self.orders[self.current_node]['id']
         except (KeyError, TypeError):
+            return False
+
+        try:
+            order = self.trader.get_order(order_id)
+        except ConnectionError as error:
+            logger.warning(error)
             return False
 
         # Check if a partially filled order has been cancelled
@@ -102,10 +108,10 @@ class ArbitrageStrategy(Strategy):
 
         # Clear the order if it no longer exists or has been cancelled
         if order_error or cancelled or (is_done and is_settled):
-            self.order = None
+            self.orders[self.current_node] = None
             return False
         else:
-            self.order = order
+            self.orders[self.current_node] = order
 
         return True
 
@@ -195,7 +201,7 @@ class ArbitrageStrategy(Strategy):
         """
 
         try:
-            market_price = self.order['price']
+            market_price = self.orders[self.current_node]['price']
         except (KeyError, TypeError):
             market_price = None
 
@@ -209,7 +215,6 @@ class ArbitrageStrategy(Strategy):
         # Use existing order price if ticker data is invalid
         except (KeyError, ValueError) as error:
             logger.warning(error)
-            pass
 
         return market_price
 
@@ -221,8 +226,14 @@ class ArbitrageStrategy(Strategy):
         """
 
         try:
-            self.trader.cancel_order(self.order['order_id'])
+            order_id = self.orders[self.current_node]['order_id']
         except (KeyError, TypeError):
+            return False
+
+        try:
+            self.trader.cancel_order(order_id)
+        except ConnectionError as error:
+            logger.warning(error)
             return False
 
         return True
@@ -240,8 +251,8 @@ class ArbitrageStrategy(Strategy):
         """
 
         try:
-            product_id = self.order['product_id']
-            price = self.order['price']
+            product_id = self.orders[self.current_node]['product_id']
+            price = self.orders[self.current_node]['price']
         except (KeyError, TypeError):
             return False
 
@@ -289,6 +300,8 @@ class ArbitrageStrategy(Strategy):
                     logger.warning(error)
                     return False
 
+                self.orders[self.current_node] = order
+
                 return True
 
             elif signal == CurrencyGraph.SELL_ORDER:
@@ -305,6 +318,8 @@ class ArbitrageStrategy(Strategy):
                 except ConnectionError as error:
                     logger.warning(error)
                     return False
+
+                self.orders[self.current_node] = order
 
                 return True
 
