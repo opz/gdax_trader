@@ -120,6 +120,8 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
             }
         ]
 
+        arbitrage.ticker = {}
+
         arbitrage._set_current_node()
 
         self.assertEqual(arbitrage.current_node, TEST_CURRENCY)
@@ -142,6 +144,8 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
         arbitrage.accounts = [
             { 'error': 'Invalid account data.', }
         ]
+
+        arbitrage.ticker = {}
 
         arbitrage._set_current_node()
 
@@ -172,6 +176,8 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
                 'balance': TEST_BALANCE,
             }
         ]
+
+        arbitrage.ticker = {}
 
         arbitrage._set_current_node()
 
