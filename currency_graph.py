@@ -27,8 +27,8 @@ class CurrencyGraph:
     BASE_KEY = 'base' # Currency pair base key
     QUOTE_KEY = 'quote' # Currency pair quote key
 
-    BUY_ORDER = 1 # Buy order trade signal
-    SELL_ORDER = 2 # Sell order trade signal
+    BUY_ORDER = 'BUY' # Buy order trade signal
+    SELL_ORDER = 'SELL' # Sell order trade signal
 
     def __init__(self):
         self.currency_pairs = []
