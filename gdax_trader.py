@@ -197,8 +197,20 @@ class GDAXTrader:
         """
 
         logger.info('BUY: {} of {}, PRICE: {}'.format(size, product, price))
-        return self.client.buy(price=price, size=size, product_id=product,
+
+        try:
+            price_str = str(price)
+            size_str = str(size)
+        except ValueError as error:
+            logger.warning(error)
+            return None
+
+        order = self.client.buy(price=price_str, size=size_str, product_id=product,
                 time_in_force='FOK')
+
+        logger.info('ORDER: {}'.format(order))
+
+        return order
 
     @connection_retry(MAX_RETRIES, RATE_LIMIT)
     def sell(self, price, size, product):
@@ -212,8 +224,20 @@ class GDAXTrader:
         """
 
         logger.info('SELL: {} of {}, PRICE: {}'.format(size, product, price))
-        return self.client.sell(price=price, size=size, product_id=product,
+
+        try:
+            price_str = str(price)
+            size_str = str(size)
+        except ValueError as error:
+            logger.warning(error)
+            return None
+
+        order = self.client.sell(price=price_str, size=size_str, product_id=product,
                 time_in_force='FOK')
+
+        logger.info('ORDER: {}'.format(order))
+
+        return order
 
     @connection_retry(MAX_RETRIES, RATE_LIMIT)
     def cancel_order(self, order_id):

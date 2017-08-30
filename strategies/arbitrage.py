@@ -1,3 +1,6 @@
+from decimal import getcontext, Decimal
+getcontext().prec = 8
+
 import logging
 
 from currency_graph import CurrencyGraph
@@ -63,12 +66,12 @@ class ArbitrageStrategy(Strategy):
         If no valid accounts are found, the current node is unchanged.
         """
 
-        balance = 0.0
+        balance = Decimal(0)
         node = None
 
         for account in self.accounts:
             try:
-                next_balance = float(account['balance'])
+                next_balance = Decimal(account['balance'])
 
                 if next_balance > balance:
                     node = account['currency']
@@ -142,8 +145,8 @@ class ArbitrageStrategy(Strategy):
             quote = currency_pair[1]
 
             try:
-                bid = float(self.ticker[product]['bid'])
-                ask = float(self.ticker[product]['ask'])
+                bid = Decimal(self.ticker[product]['bid'])
+                ask = Decimal(self.ticker[product]['ask'])
 
             # Do not build graph if ticker data is missing
             except (KeyError, ValueError) as error:
@@ -218,10 +221,10 @@ class ArbitrageStrategy(Strategy):
 
         try:
             if signal == CurrencyGraph.BUY_ORDER:
-                market_price = float(self.ticker[product]['bid'])
+                market_price = Decimal(self.ticker[product]['bid'])
 
             elif signal == CurrencyGraph.SELL_ORDER:
-                market_price = float(self.ticker[product]['ask'])
+                market_price = Decimal(self.ticker[product]['ask'])
 
         # Use existing order price if ticker data is invalid
         except (KeyError, ValueError) as error:

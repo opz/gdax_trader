@@ -1,3 +1,4 @@
+from decimal import Decimal
 import math
 
 
@@ -71,7 +72,7 @@ class CurrencyGraph:
             self.currency_graph[quote_bid] = { base_ask: bid }
 
         # Take reciprocal of ask price for reverse edge
-        converted_ask = 1.0 / ask
+        converted_ask = Decimal(1) / ask
 
         try:
             self.currency_graph[base_bid][quote_ask] = converted_ask
@@ -82,7 +83,7 @@ class CurrencyGraph:
         # CONNECT SAME CURRENCY ASK TO BID
         #
 
-        same_currency_weight = 1.0
+        same_currency_weight = Decimal(1)
 
         try:
             self.currency_graph[quote_ask][quote_bid] = same_currency_weight
@@ -109,7 +110,7 @@ class CurrencyGraph:
         distance = dict.fromkeys(self.currency_graph.keys(), 0)
         parents = dict.fromkeys(self.currency_graph.keys(), -1)
 
-        distance[start] = 1.0
+        distance[start] = Decimal(1)
         node = start
 
         while not visited[node]:
