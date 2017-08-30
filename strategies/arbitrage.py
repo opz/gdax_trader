@@ -71,15 +71,31 @@ class ArbitrageStrategy(Strategy):
 
         for account in self.accounts:
             try:
+                currency = account['currency']
                 next_balance = Decimal(account['balance'])
 
-                if next_balance > balance:
-                    node = account['currency']
-                    balance = next_balance
-
+            # Skip account if data is invalid
             except (KeyError, TypeError, ValueError) as error:
                 logger.warning(error)
                 continue
+
+            #
+            # Convert balance to target currency so accounts can be compared
+            #
+
+            product = '{}-{}'.format(currency, ArbitrageStrategy.TARGET_NODE)
+
+            try:
+                conversion = Decimal(self.ticker[product]['ask'])
+            except (KeyError, TypeError, ValueError):
+                conversion = Decimal(1)
+
+            converted_balance = next_balance * conversion
+
+            # Select currency if it has a greater account balance
+            if converted_balance > balance:
+                node = currency
+                balance = converted_balance
 
         if node != None:
             self.current_node = node
