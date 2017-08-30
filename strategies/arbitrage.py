@@ -300,7 +300,7 @@ class ArbitrageStrategy(Strategy):
                 currency = CurrencyGraph.get_quote(product)
                 logger.info('BUY with {}'.format(currency))
 
-                size = self.get_currency_balance(currency)
+                size = self.get_currency_balance(currency) / market_price
                 logger.info('Size of position: {}'.format(size))
 
                 self.trader.buy(market_price, size, product)
@@ -313,7 +313,7 @@ class ArbitrageStrategy(Strategy):
                 currency = CurrencyGraph.get_base(product)
                 logger.info('SELL with {}'.format(currency))
 
-                size = self.get_currency_balance(currency)
+                size = self.get_currency_balance(currency) * market_price
                 logger.info('Size of position: {}'.format(size))
 
                 self.trader.sell(market_price, size, product)
