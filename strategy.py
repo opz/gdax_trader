@@ -119,8 +119,8 @@ class Strategy:
         for account in self.accounts:
             try:
                 if account['currency'] == currency:
-                    return account['balance']
-            except (KeyError, TypeError):
+                    return float(account['balance'])
+            except (KeyError, TypeError, ValueError):
                 continue
 
         return None
