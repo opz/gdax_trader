@@ -1,3 +1,6 @@
+from decimal import getcontext, Decimal
+getcontext().prec = 8
+
 import logging
 
 from currency_graph import CurrencyGraph
@@ -38,13 +41,19 @@ class ArbitrageStrategy(Strategy):
 
         try:
             signal, product, distance = self._get_trade_signal()
-        except MissingCurrencyGraph:
+        except MissingCurrencyGraph as error:
+            logger.warning(error)
             return False
 
+        logger.info('Next trade signal: {} {} {}'.format(signal, product,
+                distance))
+
         if self._track_order():
+            logger.info('Update pending order...')
             self._update_pending_order(signal, product)
             return True
 
+        logger.info('Place new order...')
         self._place_order(signal, product, distance)
 
         return True
@@ -53,17 +62,43 @@ class ArbitrageStrategy(Strategy):
         """
         Set the current node by checking account balances
 
-        The first currency to have a positive balance is considered to be the
-        current node.
+        The account with the largest balance is selected as the current node.
+        If no valid accounts are found, the current node is unchanged.
         """
+
+        balance = Decimal(0)
+        node = None
 
         for account in self.accounts:
             try:
-                if account['balance'] > 0.0:
-                    self.current_node = account['currency']
-                    return
-            except (KeyError, TypeError):
+                currency = account['currency']
+                next_balance = Decimal(account['balance'])
+
+            # Skip account if data is invalid
+            except (KeyError, TypeError, ValueError) as error:
+                logger.warning(error)
                 continue
+
+            #
+            # Convert balance to target currency so accounts can be compared
+            #
+
+            product = '{}-{}'.format(currency, ArbitrageStrategy.TARGET_NODE)
+
+            try:
+                conversion = Decimal(self.ticker[product]['ask'])
+            except (KeyError, TypeError, ValueError):
+                conversion = Decimal(1)
+
+            converted_balance = next_balance * conversion
+
+            # Select currency if it has a greater account balance
+            if converted_balance > balance:
+                node = currency
+                balance = converted_balance
+
+        if node != None:
+            self.current_node = node
 
     def _track_order(self):
         """
@@ -126,11 +161,12 @@ class ArbitrageStrategy(Strategy):
             quote = currency_pair[1]
 
             try:
-                bid = float(self.ticker[product]['bid'])
-                ask = float(self.ticker[product]['ask'])
+                bid = Decimal(self.ticker[product]['bid'])
+                ask = Decimal(self.ticker[product]['ask'])
 
             # Do not build graph if ticker data is missing
-            except (KeyError, ValueError):
+            except (KeyError, ValueError) as error:
+                logger.warning(error)
                 return None
 
             currency_graph.add_currency_pair(base, quote, bid, ask)
@@ -178,6 +214,9 @@ class ArbitrageStrategy(Strategy):
 
         path, distance = self._get_currency_path(currency_graph)
 
+        logger.info('Best path for arbitrage: {}'.format(path))
+        logger.info('Path distance: {}'.format(distance))
+
         return currency_graph.get_next_signal(path) + (distance,)
 
     def _get_market_price(self, signal, product):
@@ -191,17 +230,21 @@ class ArbitrageStrategy(Strategy):
         :returns: the market price
         """
 
-        market_price = self.order['price']
+        try:
+            market_price = self.order['price']
+        except (KeyError, TypeError):
+            market_price = None
 
         try:
             if signal == CurrencyGraph.BUY_ORDER:
-                market_price = float(self.ticker[product]['bid'])
+                market_price = Decimal(self.ticker[product]['bid'])
 
             elif signal == CurrencyGraph.SELL_ORDER:
-                market_price = float(self.ticker[product]['ask'])
+                market_price = Decimal(self.ticker[product]['ask'])
 
         # Use existing order price if ticker data is invalid
-        except (KeyError, ValueError):
+        except (KeyError, ValueError) as error:
+            logger.warning(error)
             pass
 
         return market_price
@@ -243,7 +286,10 @@ class ArbitrageStrategy(Strategy):
         market_price = self._get_market_price(signal, product)
 
         if not same_product or price != market_price:
+            logger.info('Cancel pending order')
             self._cancel_order()
+        else:
+            logger.info('Pending order unchanged')
 
         return True
 
@@ -257,21 +303,39 @@ class ArbitrageStrategy(Strategy):
         :returns: `True` if order is placed, `False` if no order is placed
         """
 
-        market_price = self._get_market_price()
+        market_price = self._get_market_price(signal, product)
 
         spread = distance / market_price
 
         if spread > ArbitrageStrategy.THRESHOLD:
+            logger.info('Trade signal above threshold: {}'.format(spread))
+
             if signal == CurrencyGraph.BUY_ORDER:
+                logger.info('Signal indicates BUY order')
+
                 currency = CurrencyGraph.get_quote(product)
-                size = self.get_currency_balance(currency)
+                logger.info('BUY with {}'.format(currency))
+
+                size = self.get_currency_balance(currency) / market_price
+                logger.info('Size of position: {}'.format(size))
+
                 self.trader.buy(market_price, size, product)
+
                 return True
 
             elif signal == CurrencyGraph.SELL_ORDER:
+                logger.info('Signal indicates SELL order')
+
                 currency = CurrencyGraph.get_base(product)
-                size = self.get_currency_balance(currency)
+                logger.info('SELL with {}'.format(currency))
+
+                size = self.get_currency_balance(currency) * market_price
+                logger.info('Size of position: {}'.format(size))
+
                 self.trader.sell(market_price, size, product)
+
                 return True
+
+        logger.info('Trade signal below threshold: {}'.format(spread))
 
         return False

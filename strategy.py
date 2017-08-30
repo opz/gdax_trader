@@ -1,3 +1,6 @@
+from decimal import getcontext, Decimal
+getcontext().prec = 8
+
 import logging
 
 
@@ -119,8 +122,8 @@ class Strategy:
         for account in self.accounts:
             try:
                 if account['currency'] == currency:
-                    return account['balance']
-            except (KeyError, TypeError):
+                    return Decimal(account['balance'])
+            except (KeyError, TypeError, ValueError):
                 continue
 
         return None
