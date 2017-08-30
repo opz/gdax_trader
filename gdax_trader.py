@@ -206,7 +206,7 @@ class GDAXTrader:
             return None
 
         order = self.client.buy(price=price_str, size=size_str, product_id=product,
-                time_in_force='FOK')
+                post_only=True, time_in_force='FOK')
 
         logger.info('ORDER: {}'.format(order))
 
@@ -233,7 +233,7 @@ class GDAXTrader:
             return None
 
         order = self.client.sell(price=price_str, size=size_str, product_id=product,
-                time_in_force='FOK')
+                post_only=True, time_in_force='FOK')
 
         logger.info('ORDER: {}'.format(order))
 
