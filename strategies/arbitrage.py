@@ -24,7 +24,7 @@ class ArbitrageStrategy(Strategy):
 
     Attributes:
         current_node: The currency node the currency path starts from
-        order: The currently open order
+        orders: The currently open orders for each account
     """
 
     START_NODE = 'USD' # the default start currency
@@ -38,6 +38,7 @@ class ArbitrageStrategy(Strategy):
 
     def next(self):
         for account in self.accounts:
+            # Set the current node
             try:
                 self.current_node = account['currency']
             except (KeyError, TypeError):
@@ -45,6 +46,7 @@ class ArbitrageStrategy(Strategy):
 
             logger.info('Current node is {}'.format(self.current_node))
 
+            # Get the trade signal for the current node
             try:
                 signal, product, distance = self._get_trade_signal()
             except MissingCurrencyGraph as error:
@@ -54,6 +56,7 @@ class ArbitrageStrategy(Strategy):
             logger.info('Next trade signal: {} {} {}'.format(signal, product,
                     distance))
 
+            # Update open orders
             if self._track_order():
                 logger.info('Update pending order...')
                 self._update_pending_order(signal, product)
