@@ -283,7 +283,11 @@ class ArbitrageStrategy(Strategy):
                 size = self.get_currency_balance(currency) / market_price
                 logger.info('Size of position: {}'.format(size))
 
-                self.trader.buy(market_price, size, product)
+                try:
+                    order = self.trader.buy(market_price, size, product)
+                except ConnectionError as error:
+                    logger.warning(error)
+                    return False
 
                 return True
 
@@ -296,7 +300,11 @@ class ArbitrageStrategy(Strategy):
                 size = self.get_currency_balance(currency) * market_price
                 logger.info('Size of position: {}'.format(size))
 
-                self.trader.sell(market_price, size, product)
+                try:
+                    order = self.trader.sell(market_price, size, product)
+                except ConnectionError as error:
+                    logger.warning(error)
+                    return False
 
                 return True
 
