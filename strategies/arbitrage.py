@@ -34,71 +34,35 @@ class ArbitrageStrategy(Strategy):
 
     def set_up(self):
         self.current_node = ArbitrageStrategy.START_NODE
-        self.order = None
+        self.orders = {}
 
     def next(self):
-        self._set_current_node()
-
-        try:
-            signal, product, distance = self._get_trade_signal()
-        except MissingCurrencyGraph as error:
-            logger.warning(error)
-            return False
-
-        logger.info('Next trade signal: {} {} {}'.format(signal, product,
-                distance))
-
-        if self._track_order():
-            logger.info('Update pending order...')
-            self._update_pending_order(signal, product)
-            return True
-
-        logger.info('Place new order...')
-        self._place_order(signal, product, distance)
-
-        return True
-
-    def _set_current_node(self):
-        """
-        Set the current node by checking account balances
-
-        The account with the largest balance is selected as the current node.
-        If no valid accounts are found, the current node is unchanged.
-        """
-
-        balance = Decimal(0)
-        node = None
-
         for account in self.accounts:
             try:
-                currency = account['currency']
-                next_balance = Decimal(account['balance'])
+                self.current_node = account['currency']
+            except (KeyError, TypeError):
+                continue
 
-            # Skip account if data is invalid
-            except (KeyError, TypeError, ValueError) as error:
+            logger.info('Current node is {}'.format(self.current_node))
+
+            try:
+                signal, product, distance = self._get_trade_signal()
+            except MissingCurrencyGraph as error:
                 logger.warning(error)
                 continue
 
-            #
-            # Convert balance to target currency so accounts can be compared
-            #
+            logger.info('Next trade signal: {} {} {}'.format(signal, product,
+                    distance))
 
-            product = '{}-{}'.format(currency, ArbitrageStrategy.TARGET_NODE)
+            if self._track_order():
+                logger.info('Update pending order...')
+                self._update_pending_order(signal, product)
+                continue
 
-            try:
-                conversion = Decimal(self.ticker[product]['ask'])
-            except (KeyError, TypeError, ValueError):
-                conversion = Decimal(1)
+            logger.info('Place new order...')
+            self._place_order(signal, product, distance)
 
-            converted_balance = next_balance * conversion
-
-            # Select currency if it has a greater account balance
-            if converted_balance > balance:
-                node = currency
-                balance = converted_balance
-
-        if node != None:
-            self.current_node = node
+        return True
 
     def _track_order(self):
         """
