@@ -1,5 +1,4 @@
-from decimal import getcontext, Decimal
-getcontext().prec = 8
+from decimal import Decimal, InvalidOperation
 
 import logging
 
