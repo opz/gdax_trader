@@ -289,6 +289,13 @@ class ArbitrageStrategy(Strategy):
         :returns: `True` if order is placed, `False` if no order is placed
         """
 
+        # Do not place a new order if an old order is still open
+        try:
+            if self.orders[self.current_node] != None:
+                return False
+        except KeyError:
+            pass
+
         market_price = self._get_market_price(signal, product)
 
         spread = distance / market_price
