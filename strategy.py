@@ -18,6 +18,8 @@ class Strategy:
 
     def __init__(self):
         self.trader = None
+        self.accounts = []
+        self.ticker = {}
 
         self.set_up()
 
