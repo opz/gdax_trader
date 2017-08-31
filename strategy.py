@@ -14,8 +14,6 @@ class Strategy:
         trader: An instance of :class:`GDAXTrader`.
         accounts: GDAX account data
         ticker: GDAX ticker data for all products
-        orders: GDAX order data
-        position: GDAX profile overview
     """
 
     def __init__(self):
@@ -58,37 +56,6 @@ class Strategy:
                 - ask
                 - volume
                 - time
-
-            orders:
-                - id
-                - price
-                - size
-                - product_id
-                - side
-                - stp
-                - type
-                - time_in_force
-                - post_only
-                - created_at
-                - fill_fees
-                - filled_size
-                - executed_value
-                - status
-                - settled
-
-            position:
-                - status
-                - funding
-                - accounts
-                - margin_call
-                - user_id
-                - profile_id
-                - position
-                     - type
-                     - size
-                     - complement
-                     - max_size
-                - product_id
         """
 
         raise NotImplementedError
