@@ -87,7 +87,7 @@ class Strategy:
             try:
                 if account['currency'] == currency:
                     return Decimal(account['balance'])
-            except (KeyError, TypeError, ValueError):
+            except (KeyError, TypeError, InvalidOperation):
                 continue
 
         return None

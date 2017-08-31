@@ -137,7 +137,7 @@ class ArbitrageStrategy(Strategy):
                 ask = Decimal(self.ticker[product]['ask'])
 
             # Do not build graph if ticker data is missing
-            except (KeyError, ValueError) as error:
+            except (KeyError, InvalidOperation) as error:
                 logger.warning(error)
                 return None
 
@@ -215,7 +215,7 @@ class ArbitrageStrategy(Strategy):
                 market_price = Decimal(self.ticker[product]['ask'])
 
         # Use existing order price if ticker data is invalid
-        except (KeyError, ValueError) as error:
+        except (KeyError, InvalidOperation) as error:
             logger.warning(error)
 
         return market_price
