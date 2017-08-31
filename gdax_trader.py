@@ -178,7 +178,7 @@ class GDAXTrader:
 
         try:
             price_str = str(price)
-            size_str = str(size)
+            size_str = str(size.quantize(Decimal('1.00000000')))
         except ValueError as error:
             logger.warning(error)
             return None
