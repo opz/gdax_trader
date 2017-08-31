@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 
 import logging
@@ -263,15 +264,26 @@ class ArbitrageStrategy(Strategy):
 
         try:
             product_id = self.orders[self.current_node]['product_id']
-            price = self.orders[self.current_node]['price']
-        except (KeyError, TypeError):
+            price = Decimal(self.orders[self.current_node]['price'])
+            created_at = self.orders[self.current_node]['created_at']
+        except (KeyError, TypeError, InvalidOperation):
             return False
 
         same_product = product_id == product
 
         market_price = self._get_market_price(signal, product)
 
-        if not same_product or price != market_price:
+        timeframe = timedelta(minutes=1)
+        created_at_dt = datetime.strptime(created_at, '%Y-%m-%dT%H:%M:%S.%fZ')
+        created_at_dt = created_at_dt.replace(tzinfo=timezone.utc)
+        current_time = datetime.now(timezone.utc)
+        elapsed_time = current_time - created_at_dt
+
+        logger.info('Time elapsed since order creation: {}'.format(elapsed_time))
+
+        can_be_cancelled = elapsed_time > timeframe
+
+        if can_be_cancelled and (not same_product or price != market_price):
             logger.info('Cancel pending order')
             self._cancel_order()
         else:
