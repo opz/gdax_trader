@@ -243,7 +243,7 @@ class ArbitrageStrategy(Strategy):
         """
 
         try:
-            order_id = self.orders[self.current_node]['order_id']
+            order_id = self.orders[self.current_node]['id']
         except (KeyError, TypeError):
             return False
 
