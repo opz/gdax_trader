@@ -318,7 +318,8 @@ class ArbitrageStrategy(Strategy):
                     logger.warning(error)
                     return False
 
-                self.orders[self.current_node] = order
+                if 'message' not in order:
+                    self.orders[self.current_node] = order
 
                 return True
 
@@ -337,7 +338,8 @@ class ArbitrageStrategy(Strategy):
                     logger.warning(error)
                     return False
 
-                self.orders[self.current_node] = order
+                if 'message' not in order:
+                    self.orders[self.current_node] = order
 
                 return True
 
