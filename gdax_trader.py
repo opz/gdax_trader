@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, ROUND_FLOOR
 import logging
 import os
 
@@ -178,7 +178,8 @@ class GDAXTrader:
 
         try:
             price_str = str(price)
-            size_str = str(size.quantize(Decimal('1.00000000')))
+            size_str = str(size.quantize(Decimal('1.00000000'),
+                    rounding=ROUND_FLOOR))
         except ValueError as error:
             logger.warning(error)
             return None
@@ -205,7 +206,8 @@ class GDAXTrader:
 
         try:
             price_str = str(price)
-            size_str = str(size.quantize(Decimal('1.00000000')))
+            size_str = str(size.quantize(Decimal('1.00000000'),
+                    rounding=ROUND_FLOOR))
         except ValueError as error:
             logger.warning(error)
             return None
