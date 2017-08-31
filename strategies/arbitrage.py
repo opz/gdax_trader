@@ -39,32 +39,41 @@ class ArbitrageStrategy(Strategy):
         for account in self.accounts:
             # Set the current node
             try:
-                self.current_node = account['currency']
-            except (KeyError, TypeError):
+                current_node = account['currency']
+
+                logger.info('Checking {} account'.format(current_node))
+
+                balance = Decimal(account['balance'])
+            except (KeyError, TypeError, InvalidOperation):
                 continue
 
-            logger.info('Current node is {}'.format(self.current_node))
+            logger.info('Balance is {}'.format(balance))
 
-            # Get the trade signal for the current node
-            try:
-                signal, product, distance = self._get_trade_signal()
-            except MissingCurrencyGraph as error:
-                logger.warning(error)
-                continue
+            if balance > Decimal(0):
+                self.current_node = current_node
 
-            logger.info('Next trade signal: {} {} {}'.format(signal, product,
-                    distance))
+                logger.info('Current node is {}'.format(self.current_node))
 
-            # Update open orders
-            if self._track_order():
-                logger.info('Update pending order...')
-                self._update_pending_order(signal, product)
-                continue
+                # Get the trade signal for the current node
+                try:
+                    signal, product, distance = self._get_trade_signal()
+                except MissingCurrencyGraph as error:
+                    logger.warning(error)
+                    continue
 
-            logger.info('Place new order...')
-            self._place_order(signal, product, distance)
+                logger.info('Next trade signal: {} {} {}'.format(signal, product,
+                        distance))
 
-        return True
+                # Update open orders
+                if self._track_order():
+                    logger.info('Update pending order...')
+                    self._update_pending_order(signal, product)
+                    continue
+
+                logger.info('ORDERS: {}'.format(self.orders))
+
+                logger.info('Place new order...')
+                self._place_order(signal, product, distance)
 
     def _track_order(self):
         """
