@@ -103,6 +103,11 @@ class ArbitrageStrategy(Strategy):
         except KeyError:
             cancelled = False
 
+        try:
+            rejected = order['status'] == 'rejected'
+        except KeyError:
+            rejected = False
+
         # Check if order has been completed
         try:
             is_done = order['status'] == 'done'
@@ -119,7 +124,7 @@ class ArbitrageStrategy(Strategy):
         order_error = 'message' in order
 
         # Clear the order if it no longer exists or has been cancelled
-        if order_error or cancelled or (is_done and is_settled):
+        if order_error or cancelled or rejected or (is_done and is_settled):
             self.orders[self.current_node] = None
             return False
         else:
