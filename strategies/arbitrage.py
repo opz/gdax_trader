@@ -115,7 +115,7 @@ class ArbitrageStrategy(Strategy):
             is_settled = False
 
         # An unfilled order that was cancelled will throw an error
-        order_error = 'error' in order
+        order_error = 'message' in order
 
         # Clear the order if it no longer exists or has been cancelled
         if order_error or cancelled or (is_done and is_settled):
