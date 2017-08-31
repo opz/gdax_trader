@@ -1,3 +1,4 @@
+from decimal import Decimal
 import unittest
 from unittest.mock import MagicMock, patch, call
 
@@ -23,48 +24,87 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
         """
         Test :meth:`ArbitrageStrategy.next`
 
-        Assert :meth:`ArbitrageStrategy._place_order` is called and `True` is
-        returned.
+        Assert :meth:`ArbitrageStrategy._place_order` is called.
         """
 
         arbitrage = ArbitrageStrategy()
 
+        TEST_CURRENCY = 'USD'
+        arbitrage.accounts = [
+            {
+                'currency': TEST_CURRENCY,
+                'balance': Decimal(1),
+            }
+        ]
+
         trade_signal = (CurrencyGraph.BUY_ORDER, 'BTC-USD', 1.0,)
         arbitrage._get_trade_signal = MagicMock(return_value=trade_signal)
 
-        arbitrage._set_current_node = MagicMock()
         arbitrage._track_order = MagicMock(return_value=False)
         arbitrage._update_pending_order = MagicMock()
         arbitrage._place_order = MagicMock()
 
-        success = arbitrage.next()
+        arbitrage.next()
 
-        self.assertTrue(success)
         self.assertEqual(arbitrage._update_pending_order.called, 0)
         self.assertEqual(arbitrage._place_order.called, 1)
+
+    def test_next_with_invalid_account_data(self):
+        """
+        Test :meth:`ArbitrageStrategy.next`
+
+        Assert :meth:`ArbitrageStrategy._update_pending_order` and
+        :meth:`ArbitrageStrategy._place_order` are not called.
+        """
+
+        arbitrage = ArbitrageStrategy()
+
+        TEST_CURRENCY = 'USD'
+        arbitrage.accounts = [
+            {
+                'error': 'Invalid account data',
+            }
+        ]
+
+        trade_signal = (CurrencyGraph.BUY_ORDER, 'BTC-USD', 1.0,)
+        arbitrage._get_trade_signal = MagicMock(return_value=trade_signal)
+
+        arbitrage._track_order = MagicMock(return_value=False)
+        arbitrage._update_pending_order = MagicMock()
+        arbitrage._place_order = MagicMock()
+
+        arbitrage.next()
+
+        self.assertEqual(arbitrage._update_pending_order.called, 0)
+        self.assertEqual(arbitrage._place_order.called, 0)
 
     def test_next_trade_signal_error(self):
         """
         Test :meth:`ArbitrageStrategy.next`
 
         Assert :meth:`ArbitrageStrategy._update_pending_order` and
-        :meth:`ArbitrageStrategy._place_order` are not called and `False` is
-        returned.
+        :meth:`ArbitrageStrategy._place_order` are not called.
         """
 
         arbitrage = ArbitrageStrategy()
 
+        TEST_CURRENCY = 'USD'
+        arbitrage.accounts = [
+            {
+                'currency': TEST_CURRENCY,
+                'balance': Decimal(1),
+            }
+        ]
+
         error = MissingCurrencyGraph()
         arbitrage._get_trade_signal = MagicMock(side_effect=error)
 
-        arbitrage._set_current_node = MagicMock()
         arbitrage._track_order = MagicMock(return_value=False)
         arbitrage._update_pending_order = MagicMock()
         arbitrage._place_order = MagicMock()
 
-        success = arbitrage.next()
+        arbitrage.next()
 
-        self.assertFalse(success)
         self.assertEqual(arbitrage._update_pending_order.called, 0)
         self.assertEqual(arbitrage._place_order.called, 0)
 
@@ -72,23 +112,28 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
         """
         Test :meth:`ArbitrageStrategy.next`
 
-        Assert :meth:`ArbitrageStrategy._update_pending_order` is called and
-        `True` is returned.
+        Assert :meth:`ArbitrageStrategy._update_pending_order` is called.
         """
 
         arbitrage = ArbitrageStrategy()
 
+        TEST_CURRENCY = 'USD'
+        arbitrage.accounts = [
+            {
+                'currency': TEST_CURRENCY,
+                'balance': Decimal(1),
+            }
+        ]
+
         trade_signal = (CurrencyGraph.BUY_ORDER, 'BTC-USD', 1.0,)
         arbitrage._get_trade_signal = MagicMock(return_value=trade_signal)
 
-        arbitrage._set_current_node = MagicMock()
         arbitrage._track_order = MagicMock(return_value=True)
         arbitrage._update_pending_order = MagicMock()
         arbitrage._place_order = MagicMock()
 
-        success = arbitrage.next()
+        arbitrage.next()
 
-        self.assertTrue(success)
         self.assertEqual(arbitrage._update_pending_order.called, 1)
         self.assertEqual(arbitrage._place_order.called, 0)
 
@@ -101,10 +146,15 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
 
         arbitrage = ArbitrageStrategy()
 
-        test_order = {
-            'id': 1,
+        TEST_ACCOUNT = 'USD'
+        test_orders = {
+            TEST_ACCOUNT: {
+                'id': 1,
+            }
         }
-        arbitrage.order = test_order
+        arbitrage.orders = test_orders
+
+        arbitrage.current_node = TEST_ACCOUNT
 
         trader = MagicMock()
 
@@ -118,7 +168,7 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
         success = arbitrage._track_order()
 
         self.assertTrue(success)
-        self.assertEqual(arbitrage.order, test_order_update)
+        self.assertEqual(arbitrage.orders[TEST_ACCOUNT], test_order_update)
 
     def test__track_order_with_no_current_order(self):
         """
@@ -129,7 +179,10 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
 
         arbitrage = ArbitrageStrategy()
 
-        arbitrage.order = None
+        arbitrage.orders = None
+
+        TEST_ACCOUNT = 'USD'
+        arbitrage.current_node = TEST_ACCOUNT
 
         trader = MagicMock()
 
@@ -143,7 +196,38 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
         success = arbitrage._track_order()
 
         self.assertFalse(success)
-        self.assertEqual(arbitrage.order, None)
+        self.assertEqual(arbitrage.orders, None)
+
+    def test__track_order_with_connection_error(self):
+        """
+        Test :meth:`ArbitrageStrategy._track_order`
+
+        Assert the current order data is cleared and `False` is returned.
+        """
+
+        arbitrage = ArbitrageStrategy()
+
+        TEST_ACCOUNT = 'USD'
+        test_orders = {
+            TEST_ACCOUNT: {
+                'id': 1,
+            }
+        }
+        arbitrage.orders = test_orders
+
+        arbitrage.current_node = TEST_ACCOUNT
+
+        trader = MagicMock()
+
+        trader.get_order.side_effect = ConnectionError
+
+        arbitrage.trader = trader
+
+        success = arbitrage._track_order()
+
+        self.assertFalse(success)
+        self.assertEqual(arbitrage.orders[TEST_ACCOUNT],
+                test_orders[TEST_ACCOUNT])
 
     def test__track_order_that_has_been_cancelled(self):
         """
@@ -154,10 +238,15 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
 
         arbitrage = ArbitrageStrategy()
 
-        test_order = {
-            'id': 1,
+        TEST_ACCOUNT = 'USD'
+        test_orders = {
+            TEST_ACCOUNT: {
+                'id': 1,
+            }
         }
-        arbitrage.order = test_order
+        arbitrage.orders = test_orders
+
+        arbitrage.current_node = TEST_ACCOUNT
 
         trader = MagicMock()
 
@@ -172,7 +261,7 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
         success = arbitrage._track_order()
 
         self.assertFalse(success)
-        self.assertEqual(arbitrage.order, None)
+        self.assertEqual(arbitrage.orders[TEST_ACCOUNT], None)
 
     def test__track_order__that_has_been_filled(self):
         """
@@ -183,10 +272,15 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
 
         arbitrage = ArbitrageStrategy()
 
-        test_order = {
-            'id': 1,
+        TEST_ACCOUNT = 'USD'
+        test_orders = {
+            TEST_ACCOUNT: {
+                'id': 1,
+            }
         }
-        arbitrage.order = test_order
+        arbitrage.orders = test_orders
+
+        arbitrage.current_node = TEST_ACCOUNT
 
         trader = MagicMock()
 
@@ -202,7 +296,7 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
         success = arbitrage._track_order()
 
         self.assertFalse(success)
-        self.assertEqual(arbitrage.order, None)
+        self.assertEqual(arbitrage.orders[TEST_ACCOUNT], None)
 
     @patch('strategies.arbitrage.CurrencyGraph')
     def test__build_currency_graph_with_valid_ticker_data(self, currency_graph_mock):
@@ -318,10 +412,15 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
 
         arbitrage = ArbitrageStrategy()
 
+        TEST_ACCOUNT = 'USD'
         TEST_PRICE = 1.0
-        arbitrage.order = {
-            'price': TEST_PRICE,
+        arbitrage.orders = {
+            TEST_ACCOUNT: {
+                'price': TEST_PRICE,
+            }
         }
+
+        arbitrage.current_node = TEST_ACCOUNT
 
         TEST_PRODUCT = 'USD'
         TEST_BID = 2.0
@@ -373,10 +472,15 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
 
         arbitrage = ArbitrageStrategy()
 
+        TEST_ACCOUNT = 'USD'
         TEST_PRICE = 1.0
-        arbitrage.order = {
-            'price': TEST_PRICE,
+        arbitrage.orders = {
+            TEST_ACCOUNT: {
+                'price': TEST_PRICE,
+            }
         }
+
+        arbitrage.current_node = TEST_ACCOUNT
 
         TEST_PRODUCT = 'USD'
         TEST_BID = 2.0
@@ -401,10 +505,15 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
 
         arbitrage = ArbitrageStrategy()
 
+        TEST_ACCOUNT = 'USD'
         TEST_PRICE = 1.0
-        arbitrage.order = {
-            'price': TEST_PRICE,
+        arbitrage.orders = {
+            TEST_ACCOUNT: {
+                'price': TEST_PRICE,
+            }
         }
+
+        arbitrage.current_node = TEST_ACCOUNT
 
         TEST_PRODUCT = 'USD'
         TEST_BID = 2.0
@@ -430,9 +539,12 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
 
         arbitrage = ArbitrageStrategy()
 
+        TEST_ACCOUNT = 'USD'
         TEST_PRICE = 1.0
-        arbitrage.order = {
-            'price': TEST_PRICE,
+        arbitrage.orders = {
+            TEST_ACCOUNT: {
+                'price': TEST_PRICE,
+            }
         }
 
         TEST_PRODUCT = 'USD'
@@ -458,10 +570,15 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
 
         arbitrage = ArbitrageStrategy()
 
+        TEST_ACCOUNT = 'USD'
         TEST_ID = 1
-        arbitrage.order = {
-            'order_id': TEST_ID,
+        arbitrage.orders = {
+            TEST_ACCOUNT: {
+                'order_id': TEST_ID,
+            }
         }
+
+        arbitrage.current_node = TEST_ACCOUNT
 
         trader = MagicMock()
         arbitrage.trader = trader
@@ -480,7 +597,7 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
 
         arbitrage = ArbitrageStrategy()
 
-        arbitrage.order = None
+        arbitrage.orders = None
 
         trader = MagicMock()
         arbitrage.trader = trader
@@ -499,12 +616,17 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
 
         arbitrage = ArbitrageStrategy()
 
+        TEST_ACCOUNT = 'USD'
         TEST_PRODUCT = 'BTC-USD'
         TEST_PRICE = 1.0
-        arbitrage.order = {
-            'product_id': TEST_PRODUCT,
-            'price': TEST_PRICE,
+        arbitrage.orders = {
+            TEST_ACCOUNT: {
+                'product_id': TEST_PRODUCT,
+                'price': TEST_PRICE,
+            }
         }
+
+        arbitrage.current_node = TEST_ACCOUNT
 
         arbitrage._get_market_price = MagicMock(return_value=TEST_PRICE)
 
@@ -529,7 +651,7 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
 
         TEST_PRODUCT = 'BTC-USD'
         TEST_PRICE = 1.0
-        arbitrage.order = None
+        arbitrage.orders = None
 
         arbitrage._get_market_price = MagicMock(return_value=TEST_PRICE)
 
@@ -552,12 +674,17 @@ class ArbitrageStrategyTestCase(unittest.TestCase):
 
         arbitrage = ArbitrageStrategy()
 
+        TEST_ACCOUNT = 'USD'
         TEST_PRODUCT = 'BTC-USD'
         TEST_PRICE = 1.0
-        arbitrage.order = {
-            'product_id': TEST_PRODUCT,
-            'price': TEST_PRICE,
+        arbitrage.orders = {
+            TEST_ACCOUNT: {
+                'product_id': TEST_PRODUCT,
+                'price': TEST_PRICE,
+            }
         }
+
+        arbitrage.current_node = TEST_ACCOUNT
 
         NEW_PRICE = 2.0
         arbitrage._get_market_price = MagicMock(return_value=NEW_PRICE)
